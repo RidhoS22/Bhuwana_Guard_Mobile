@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
-import '../register/register_page.dart'; // 🔥 TAMBAHAN
+import '../login/login_page.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
+  final nameController = TextEditingController();
+  final phoneController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
   bool isObscure = true;
-
   final greenColor = const Color(0xFF0F3D2E);
 
   @override
@@ -22,19 +23,29 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: const Color(0xFFF4F4F4),
       body: Stack(
         children: [
+          /// 🌿 TOP RIGHT
           Positioned(
             right: 0,
             top: 40,
             child: Transform.rotate(
               angle: 3.14,
-              child: Image.asset("assets/images/daun_atas.png", width: 140),
+              child: Image.asset(
+                "assets/images/daun_atas.png",
+                width: 140,
+              ),
             ),
           ),
+
+          /// 🌿 BOTTOM LEFT
           Positioned(
             left: 0,
             bottom: 0,
-            child: Image.asset("assets/images/daun_bawah.png", width: 140),
+            child: Image.asset(
+              "assets/images/daun_bawah.png",
+              width: 140,
+            ),
           ),
+
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -43,18 +54,20 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: 20),
 
+                  /// 🔙 BACK
                   CircleAvatar(
                     backgroundColor: greenColor,
                     child: const Icon(Icons.arrow_back, color: Colors.white),
                   ),
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 30),
 
+                  /// TITLE
                   Center(
                     child: Column(
                       children: [
                         Text(
-                          "Sign In",
+                          "Create Account",
                           style: TextStyle(
                             fontFamily: "Inter",
                             fontSize: 28,
@@ -63,14 +76,15 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: 6),
+
                         Column(
                           children: [
-                            Text(
-                              "Hi, Welcome back, you’ve been missed",
+                            const Text(
+                              "Fill your information below or register\nwith your social account",
+                              textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontFamily: "Poppins",
                                 fontSize: 12,
-                                color: greenColor,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -85,46 +99,70 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 30),
 
+                  /// NAME
+                  const Text("Name",
+                      style: TextStyle(fontFamily: "Poppins")),
+                  const SizedBox(height: 6),
+                  _inputField(
+                    controller: nameController,
+                    hint: "Enter your name",
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  /// PHONE
+                  const Text("Phone Number",
+                      style: TextStyle(fontFamily: "Poppins")),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        height: 55,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: greenColor),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(child: Text("+62")),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _inputField(
+                          controller: phoneController,
+                          hint: "Enter your number",
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  /// EMAIL
                   const Text("Enter Email",
                       style: TextStyle(fontFamily: "Poppins")),
                   const SizedBox(height: 6),
                   _inputField(
                     controller: emailController,
                     hint: "Enter your email",
-                    icon: Icons.email_outlined,
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
+                  /// PASSWORD
                   const Text("Enter Password",
                       style: TextStyle(fontFamily: "Poppins")),
                   const SizedBox(height: 6),
                   _inputField(
                     controller: passwordController,
                     hint: "Enter your password",
-                    icon: Icons.lock_outline,
                     isPassword: true,
                   ),
 
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {},
-                      child: const Text(
-                        "Forgot Password?",
-                        style: TextStyle(
-                          fontFamily: "Poppins",
-                          decoration: TextDecoration.underline,
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ),
-                  ),
+                  const SizedBox(height: 25),
 
-                  const SizedBox(height: 20),
-
+                  /// BUTTON
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -137,10 +175,9 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       child: const Text(
-                        "Sign In",
+                        "Sign Up",
                         style: TextStyle(
                           fontFamily: "Inter",
-                          fontSize: 16,
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
@@ -150,17 +187,15 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 20),
 
+                  /// DIVIDER
                   Row(
                     children: [
                       Expanded(child: Divider(color: greenColor)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
                         child: Text(
                           "or sign in with",
-                          style: TextStyle(
-                            fontFamily: "Poppins",
-                            color: greenColor,
-                          ),
+                          style: TextStyle(fontFamily: "Poppins"),
                         ),
                       ),
                       Expanded(child: Divider(color: greenColor)),
@@ -169,6 +204,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 20),
 
+                  /// GOOGLE
                   SizedBox(
                     width: double.infinity,
                     child: Container(
@@ -198,32 +234,31 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 25),
+                  const SizedBox(height: 20),
 
-                  /// 🔥 INI YANG DITAMBAH (NAVIGASI DOANG)
+                  /// 🔁 BACK TO LOGIN
                   Center(
                     child: GestureDetector(
                       onTap: () {
-                        Navigator.push(
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const RegisterPage(),
-                          ),
+                              builder: (_) => const LoginPage()),
                         );
                       },
                       child: RichText(
                         text: TextSpan(
-                          text: "Don’t have an account? ",
+                          text: "Already have an account? ",
                           style: TextStyle(
                             fontFamily: "Poppins",
                             color: greenColor,
                           ),
                           children: const [
                             TextSpan(
-                              text: "Sign Up",
+                              text: "Sign In",
                               style: TextStyle(
-                                fontFamily: "Inter",
                                 color: Colors.blue,
+                                fontFamily: "Inter",
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -246,7 +281,6 @@ class _LoginPageState extends State<LoginPage> {
   Widget _inputField({
     required TextEditingController controller,
     required String hint,
-    required IconData icon,
     bool isPassword = false,
   }) {
     return TextField(
@@ -254,14 +288,10 @@ class _LoginPageState extends State<LoginPage> {
       obscureText: isPassword ? isObscure : false,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
-                  isObscure
-                      ? Icons.visibility_off
-                      : Icons.visibility,
-                ),
+                    isObscure ? Icons.visibility_off : Icons.visibility),
                 onPressed: () {
                   setState(() {
                     isObscure = !isObscure;
@@ -274,10 +304,8 @@ class _LoginPageState extends State<LoginPage> {
           borderRadius: BorderRadius.circular(12),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(
-            color: Color(0xFF0F3D2E),
-            width: 2,
-          ),
+          borderSide:
+              const BorderSide(color: Color(0xFF0F3D2E), width: 2),
           borderRadius: BorderRadius.circular(12),
         ),
       ),
