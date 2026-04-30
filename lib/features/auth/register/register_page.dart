@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../login/login_page.dart';
+import '../verify/verify_page.dart'; // 🔥 TAMBAHAN
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -23,46 +24,27 @@ class _RegisterPageState extends State<RegisterPage> {
       backgroundColor: const Color(0xFFF4F4F4),
       body: Stack(
         children: [
-          /// 🌿 TOP RIGHT
           Positioned(
             right: 0,
             top: 40,
             child: Transform.rotate(
               angle: 3.14,
-              child: Image.asset(
-                "assets/images/daun_atas.png",
-                width: 140,
-              ),
+              child: Image.asset("assets/images/daun_atas.png", width: 140),
             ),
           ),
-
-          /// 🌿 BOTTOM LEFT
           Positioned(
             left: 0,
             bottom: 0,
-            child: Image.asset(
-              "assets/images/daun_bawah.png",
-              width: 140,
-            ),
+            child: Image.asset("assets/images/daun_bawah.png", width: 140),
           ),
-
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 20),
-
-                  /// 🔙 BACK
-                  CircleAvatar(
-                    backgroundColor: greenColor,
-                    child: const Icon(Icons.arrow_back, color: Colors.white),
-                  ),
-
                   const SizedBox(height: 30),
 
-                  /// TITLE
                   Center(
                     child: Column(
                       children: [
@@ -76,16 +58,12 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                         const SizedBox(height: 6),
-
                         Column(
                           children: [
                             const Text(
                               "Fill your information below or register\nwith your social account",
                               textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: "Poppins",
-                                fontSize: 12,
-                              ),
+                              style: TextStyle(fontSize: 12),
                             ),
                             const SizedBox(height: 4),
                             Container(
@@ -101,21 +79,13 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   const SizedBox(height: 30),
 
-                  /// NAME
-                  const Text("Name",
-                      style: TextStyle(fontFamily: "Poppins")),
-                  const SizedBox(height: 6),
+                  _label("Name"),
                   _inputField(
-                    controller: nameController,
-                    hint: "Enter your name",
-                  ),
+                      controller: nameController, hint: "Enter your name"),
 
                   const SizedBox(height: 16),
 
-                  /// PHONE
-                  const Text("Phone Number",
-                      style: TextStyle(fontFamily: "Poppins")),
-                  const SizedBox(height: 6),
+                  _label("Phone Number"),
                   Row(
                     children: [
                       Container(
@@ -139,21 +109,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   const SizedBox(height: 16),
 
-                  /// EMAIL
-                  const Text("Enter Email",
-                      style: TextStyle(fontFamily: "Poppins")),
-                  const SizedBox(height: 6),
+                  _label("Enter Email"),
                   _inputField(
-                    controller: emailController,
-                    hint: "Enter your email",
-                  ),
+                      controller: emailController,
+                      hint: "Enter your email"),
 
                   const SizedBox(height: 16),
 
-                  /// PASSWORD
-                  const Text("Enter Password",
-                      style: TextStyle(fontFamily: "Poppins")),
-                  const SizedBox(height: 6),
+                  _label("Enter Password"),
                   _inputField(
                     controller: passwordController,
                     hint: "Enter your password",
@@ -162,24 +125,32 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   const SizedBox(height: 25),
 
-                  /// BUTTON
+                  /// 🔥 FIX: NAVIGASI KE VERIFY
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const VerifyPage(),
+                          ),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: greenColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
+                        elevation: 3,
                       ),
                       child: const Text(
                         "Sign Up",
                         style: TextStyle(
-                          fontFamily: "Inter",
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
+                          fontFamily: "Inter",
                         ),
                       ),
                     ),
@@ -187,16 +158,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   const SizedBox(height: 20),
 
-                  /// DIVIDER
                   Row(
                     children: [
                       Expanded(child: Divider(color: greenColor)),
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 8),
-                        child: Text(
-                          "or sign in with",
-                          style: TextStyle(fontFamily: "Poppins"),
-                        ),
+                        child: Text("or sign in with"),
                       ),
                       Expanded(child: Divider(color: greenColor)),
                     ],
@@ -204,41 +171,39 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   const SizedBox(height: 20),
 
-                  /// GOOGLE
-                  SizedBox(
-                    width: double.infinity,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.network(
-                            "https://cdn-icons-png.flaticon.com/512/2991/2991148.png",
-                            height: 20,
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            "Continue with Google",
-                            style: TextStyle(
-                              fontFamily: "Inter",
-                              fontWeight: FontWeight.w500,
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () {},
+                      child: Ink(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.network(
+                              "https://cdn-icons-png.flaticon.com/512/2991/2991148.png",
+                              height: 20,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 10),
+                            const Text("Continue with Google"),
+                          ],
+                        ),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  /// 🔁 BACK TO LOGIN
                   Center(
-                    child: GestureDetector(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
                       onTap: () {
                         Navigator.pushReplacement(
                           context,
@@ -246,23 +211,22 @@ class _RegisterPageState extends State<RegisterPage> {
                               builder: (_) => const LoginPage()),
                         );
                       },
-                      child: RichText(
-                        text: TextSpan(
-                          text: "Already have an account? ",
-                          style: TextStyle(
-                            fontFamily: "Poppins",
-                            color: greenColor,
-                          ),
-                          children: const [
-                            TextSpan(
-                              text: "Sign In",
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontFamily: "Inter",
-                                fontWeight: FontWeight.bold,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: RichText(
+                          text: TextSpan(
+                            text: "Already have an account? ",
+                            style: TextStyle(color: greenColor),
+                            children: const [
+                              TextSpan(
+                                text: "Sign In",
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -275,6 +239,13 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _label(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(text),
     );
   }
 

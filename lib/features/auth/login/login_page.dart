@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../register/register_page.dart'; // 🔥 TAMBAHAN
+import '../register/register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,7 +13,6 @@ class _LoginPageState extends State<LoginPage> {
   final passwordController = TextEditingController();
 
   bool isObscure = true;
-
   final greenColor = const Color(0xFF0F3D2E);
 
   @override
@@ -41,13 +40,6 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 20),
-
-                  CircleAvatar(
-                    backgroundColor: greenColor,
-                    child: const Icon(Icons.arrow_back, color: Colors.white),
-                  ),
-
                   const SizedBox(height: 40),
 
                   Center(
@@ -125,6 +117,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 20),
 
+                  /// 🔥 SIGN IN BUTTON
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -135,6 +128,7 @@ class _LoginPageState extends State<LoginPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
+                        elevation: 3,
                       ),
                       child: const Text(
                         "Sign In",
@@ -169,65 +163,67 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 20),
 
-                  SizedBox(
-                    width: double.infinity,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.network(
-                            "https://cdn-icons-png.flaticon.com/512/2991/2991148.png",
-                            height: 20,
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            "Continue with Google",
-                            style: TextStyle(
-                              fontFamily: "Inter",
-                              fontWeight: FontWeight.w500,
+                  /// 🔥 GOOGLE BUTTON (ADA EFFECT)
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () {},
+                      child: Ink(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.network(
+                              "https://cdn-icons-png.flaticon.com/512/2991/2991148.png",
+                              height: 20,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 10),
+                            const Text("Continue with Google"),
+                          ],
+                        ),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 25),
 
-                  /// 🔥 INI YANG DITAMBAH (NAVIGASI DOANG)
+                  /// 🔥 GO TO REGISTER
                   Center(
-                    child: GestureDetector(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const RegisterPage(),
-                          ),
+                              builder: (_) => const RegisterPage()),
                         );
                       },
-                      child: RichText(
-                        text: TextSpan(
-                          text: "Don’t have an account? ",
-                          style: TextStyle(
-                            fontFamily: "Poppins",
-                            color: greenColor,
-                          ),
-                          children: const [
-                            TextSpan(
-                              text: "Sign Up",
-                              style: TextStyle(
-                                fontFamily: "Inter",
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold,
-                              ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: RichText(
+                          text: TextSpan(
+                            text: "Don’t have an account? ",
+                            style: TextStyle(
+                              fontFamily: "Poppins",
+                              color: greenColor,
                             ),
-                          ],
+                            children: const [
+                              TextSpan(
+                                text: "Sign Up",
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -258,10 +254,7 @@ class _LoginPageState extends State<LoginPage> {
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
-                  isObscure
-                      ? Icons.visibility_off
-                      : Icons.visibility,
-                ),
+                    isObscure ? Icons.visibility_off : Icons.visibility),
                 onPressed: () {
                   setState(() {
                     isObscure = !isObscure;
@@ -274,10 +267,8 @@ class _LoginPageState extends State<LoginPage> {
           borderRadius: BorderRadius.circular(12),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(
-            color: Color(0xFF0F3D2E),
-            width: 2,
-          ),
+          borderSide:
+              const BorderSide(color: Color(0xFF0F3D2E), width: 2),
           borderRadius: BorderRadius.circular(12),
         ),
       ),

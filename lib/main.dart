@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'features/splash/splash_screen.dart';
 import 'features/auth/login/login_page.dart';
 
 void main() {
@@ -22,14 +23,12 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      // 🔥 initial route
+      // 🔥 START DARI SPLASH
       initialRoute: '/',
 
-      // 🔥 routes
       routes: {
-        '/': (context) => const LoginPage(),
-        // nanti tambah di sini:
-        // '/register': (context) => const RegisterPage(),
+        '/': (context) => const SplashScreen(), // 🔥 splash dulu
+        '/login': (context) => const LoginPage(),
       },
     );
   }
