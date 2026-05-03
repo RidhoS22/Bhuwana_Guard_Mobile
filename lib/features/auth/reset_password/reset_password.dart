@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
-import '../login/login_page.dart';
+import '../forgot_password/forgot_password.dart';
 
-class ChangePasswordPage extends StatefulWidget {
-  const ChangePasswordPage({super.key});
+class ResetPasswordPage extends StatefulWidget {
+  const ResetPasswordPage({super.key});
 
   @override
-  State<ChangePasswordPage> createState() => _ChangePasswordPageState();
+  State<ResetPasswordPage> createState() => _ResetPasswordPageState();
 }
 
-class _ChangePasswordPageState extends State<ChangePasswordPage> {
-  final oldPasswordController = TextEditingController();
+class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final newPasswordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
-  bool obscureOld = true;
   bool obscureNew = true;
   bool obscureConfirm = true;
 
@@ -33,13 +31,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           onPressed: () {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (_) => const LoginPage()),
+              MaterialPageRoute(
+                builder: (_) => const ForgotPasswordPage(),
+              ),
             );
           },
         ),
         centerTitle: true,
         title: const Text(
-          "Change Password",
+          "Reset Password",
           style: TextStyle(
             fontFamily: "Inter",
             fontWeight: FontWeight.bold,
@@ -54,24 +54,30 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            /// OLD PASSWORD
+            const SizedBox(height: 20),
+
+            /// TITLE
             const Text(
-              "Old Password",
+              "Create New Password",
               style: TextStyle(
                 fontFamily: "Inter",
-                fontWeight: FontWeight.w500,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
+
             const SizedBox(height: 6),
-            _passwordField(
-              controller: oldPasswordController,
-              obscure: obscureOld,
-              onToggle: () {
-                setState(() => obscureOld = !obscureOld);
-              },
+
+            const Text(
+              "Your new password must be different from previously used password.",
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 12,
+                color: Colors.grey,
+              ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
 
             /// NEW PASSWORD
             const Text(
@@ -109,55 +115,37 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               },
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 40),
 
-            /// 🔥 FORGOT PASSWORD BUTTON (SUDAH DIGENDUTIN)
+            /// 🔥 BUTTON RESET PASSWORD
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  // 🔥 contoh validasi sederhana
+                  if (newPasswordController.text !=
+                      confirmPasswordController.text) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Password tidak sama"),
+                      ),
+                    );
+                    return;
+                  }
+
+                  // TODO: lanjut ke API / sukses screen
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: greenColor,
-                  padding: const EdgeInsets.symmetric(vertical: 18), // 🔥 FIX
-                  minimumSize: const Size.fromHeight(50), // 🔥 tambahan biar mantap
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14), // 🔥 lebih smooth
-                  ),
-                  elevation: 3,
-                ),
-                child: const Text(
-                  "Forgot Password",
-                  style: TextStyle(
-                    fontFamily: "Poppins",
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            /// 🔥 CHANGE PASSWORD BUTTON (SUDAH DIGENDUTIN)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: greenColor,
-                  padding: const EdgeInsets.symmetric(vertical: 18), // 🔥 FIX
-                  minimumSize: const Size.fromHeight(50),
+                  padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  elevation: 3,
                 ),
                 child: const Text(
-                  "Change password",
+                  "Change Password",
                   style: TextStyle(
                     fontFamily: "Poppins",
-                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
@@ -170,7 +158,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     );
   }
 
-  /// 🔥 INPUT FIELD
+  /// 🔥 INPUT FIELD PASSWORD
   Widget _passwordField({
     required TextEditingController controller,
     required bool obscure,
