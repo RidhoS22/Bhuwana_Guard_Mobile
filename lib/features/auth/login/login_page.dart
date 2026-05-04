@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../register/register_page.dart';
 import '../forgot_password/forgot_password.dart';
+import '../../home/home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -129,7 +130,14 @@ class _LoginPageState extends State<LoginPage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const EmergencyApp(),
+                          ),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: greenColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
