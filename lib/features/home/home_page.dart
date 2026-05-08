@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlong2;
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'profile_page.dart';
+import '../safety_guide/safety_guide_page.dart';
 
 void main() {
   runApp(const EmergencyApp());
@@ -163,7 +164,7 @@ class HomePage extends StatelessWidget {
           const SizedBox(height: 24),
           _buildEmergencyAssistantSection(primaryColor, accentColor, textColor),
           const SizedBox(height: 16),
-          _buildFeatureCards(isDarkMode),
+          _buildFeatureCards(context,isDarkMode),
           const SizedBox(height: 30),
           _buildSOSButton(pulseAnimation),
           const SizedBox(height: 20),
@@ -452,7 +453,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatureCards(bool isDarkMode) {
+  Widget _buildFeatureCards(BuildContext context, bool isDarkMode) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -461,6 +462,14 @@ class HomePage extends StatelessWidget {
             children: [
               Expanded(
                 child: FeatureCard(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SafetyGuidePage(),
+                      ),
+                    );
+                  },
                   icon: Icons.medical_services_rounded,
                   title: 'Panduan\nKeamanan',
                   subtitle: 'Antisipasi\nberbahaya',
@@ -584,69 +593,110 @@ class HomePage extends StatelessWidget {
   }
 }
 
-class FeatureCard extends StatelessWidget {
+class FeatureCard extends StatefulWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final Color color;
   final bool isDark;
-  
+  final VoidCallback? onTap;
+
   const FeatureCard({
-    super.key, 
-    required this.icon, 
-    required this.title, 
+    super.key,
+    required this.icon,
+    required this.title,
     required this.subtitle,
     required this.color,
     required this.isDark,
+    this.onTap,
   });
 
   @override
+  State<FeatureCard> createState() => _FeatureCardState();
+}
+
+class _FeatureCardState extends State<FeatureCard> {
+  bool isHover = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: isDark ? Colors.white10 : color.withOpacity(0.18)),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black26 : Colors.black.withOpacity(0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.14),
-              borderRadius: BorderRadius.circular(16),
+    return MouseRegion(
+      onEnter: (_) => setState(() => isHover = true),
+      onExit: (_) => setState(() => isHover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          transform: Matrix4.identity()
+            ..scale(isHover ? 1.03 : 1.0),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: widget.isDark
+                ? const Color(0xFF1E1E1E)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: widget.isDark
+                  ? Colors.white10
+                  : widget.color.withOpacity(0.18),
             ),
-            child: Icon(icon, color: color, size: 28),
+            boxShadow: [
+              BoxShadow(
+                color: widget.isDark
+                    ? Colors.black26
+                    : Colors.black.withOpacity(
+                        isHover ? 0.12 : 0.05,
+                      ),
+                blurRadius: isHover ? 24 : 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-          const SizedBox(height: 14),
-          Text(
-            title, 
-            style: TextStyle(
-              fontWeight: FontWeight.bold, 
-              fontSize: 14, 
-              color: isDark ? Colors.white : const Color(0xFF1A1A2E),
-              height: 1.25,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: widget.color.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  widget.icon,
+                  color: widget.color,
+                  size: 28,
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              Text(
+                widget.title,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: widget.isDark
+                      ? Colors.white
+                      : const Color(0xFF1A1A2E),
+                  height: 1.25,
+                ),
+              ),
+
+              const SizedBox(height: 6),
+
+              Text(
+                widget.subtitle,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: widget.isDark
+                      ? Colors.white54
+                      : const Color(0xFF616A60),
+                  height: 1.35,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle, 
-            style: TextStyle(
-              fontSize: 11, 
-              color: isDark ? Colors.white54 : const Color(0xFF616A60),
-              height: 1.35,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
