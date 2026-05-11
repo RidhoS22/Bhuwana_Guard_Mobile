@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart' as latlong2;
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'profile_page.dart';
 import '../safety_guide/safety_guide_page.dart';
+import '../emergency_contact/emergency_contact_page.dart';
 
 void main() {
   runApp(const EmergencyApp());
@@ -494,6 +495,16 @@ class HomePage extends StatelessWidget {
             children: [
               Expanded(
                 child: FeatureCard(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const EmergencyContactPage(
+                          fromPage: 'home',
+                        ),
+                      ),
+                    );
+                  },
                   icon: Icons.phone_in_talk_rounded,
                   title: 'Kontak\nDarurat',
                   subtitle: 'Pusat\ninformasi',
