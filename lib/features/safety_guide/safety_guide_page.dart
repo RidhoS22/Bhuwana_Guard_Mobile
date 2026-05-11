@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../emergency_contact/emergency_contact_page.dart';
 
 class SafetyGuidePage extends StatelessWidget {
   const SafetyGuidePage({super.key});
@@ -407,8 +408,16 @@ class RiskDetailPage extends StatelessWidget {
                   height: 50,
 
                   child: ElevatedButton(
-                    onPressed: () {},
-
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const EmergencyContactPage(
+                            fromPage: 'safety',
+                          ),
+                        ),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       elevation: 0,
