@@ -1,215 +1,222 @@
 import 'package:flutter/material.dart';
-import '../register/register_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../login/login_page.dart';
 
 class VerifyPage extends StatefulWidget {
-  const VerifyPage({super.key});
+  final String email;
+
+  const VerifyPage({
+    super.key,
+    required this.email,
+  });
 
   @override
-  State<VerifyPage> createState() => _VerifyPageState();
+  State<VerifyPage> createState() =>
+      _VerifyPageState();
 }
 
-class _VerifyPageState extends State<VerifyPage> {
-  final List<TextEditingController> controllers =
-      List.generate(4, (_) => TextEditingController());
+class _VerifyPageState
+    extends State<VerifyPage> {
+  final greenColor =
+      const Color(0xFF0F3D2E);
 
-  final List<FocusNode> focusNodes =
-      List.generate(4, (_) => FocusNode());
+  bool isLoading = false;
 
-  final greenColor = const Color(0xFF0F3D2E);
+  void showModernSnackBar(
+      String message,
+      Color color) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      SnackBar(
+        behavior:
+            SnackBarBehavior.floating,
+        backgroundColor: color,
+        margin:
+            const EdgeInsets.all(20),
+        shape:
+            RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.circular(
+            14,
+          ),
+        ),
+        content: Text(message),
+      ),
+    );
+  }
 
-  @override
-  void dispose() {
-    for (var c in controllers) {
-      c.dispose();
+  Future<void>
+      checkVerification() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    await FirebaseAuth.instance
+        .currentUser
+        ?.reload();
+
+    final user =
+        FirebaseAuth.instance
+            .currentUser;
+
+    if (user != null &&
+        user.emailVerified) {
+      showModernSnackBar(
+        "Email verified successfully",
+        Colors.green,
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              const LoginPage(),
+        ),
+      );
+    } else {
+      showModernSnackBar(
+        "Please verify your email first",
+        Colors.red,
+      );
     }
-    for (var f in focusNodes) {
-      f.dispose();
-    }
-    super.dispose();
+
+    setState(() {
+      isLoading = false;
+    });
+  }
+
+  Future<void>
+      resendVerification() async {
+    await FirebaseAuth.instance
+        .currentUser
+        ?.sendEmailVerification();
+
+    showModernSnackBar(
+      "Verification email resent",
+      Colors.green,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F4),
-      body: Stack(
-        children: [
-          /// 🌿 TOP RIGHT
-          Positioned(
-            right: 0,
-            top: 40,
-            child: Transform.rotate(
-              angle: 3.14,
-              child: Image.asset("assets/images/daun_atas.png", width: 140),
-            ),
+      backgroundColor:
+          const Color(0xFFF4F4F4),
+
+      appBar: AppBar(
+        backgroundColor:
+            Colors.transparent,
+        elevation: 0,
+
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: Icon(
+            Icons.arrow_back,
+            color: greenColor,
+          ),
+        ),
+      ),
+
+      body: Center(
+        child: Padding(
+          padding:
+              const EdgeInsets.symmetric(
+            horizontal: 24,
           ),
 
-          /// 🌿 BOTTOM LEFT
-          Positioned(
-            left: 0,
-            bottom: 0,
-            child: Image.asset("assets/images/daun_bawah.png", width: 140),
-          ),
+          child: Column(
+            mainAxisAlignment:
+                MainAxisAlignment.center,
 
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-
-                  /// 🔙 BACK BUTTON
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const RegisterPage(),
-                          ),
-                        );
-                      },
-                      child: CircleAvatar(
-                        backgroundColor: greenColor,
-                        child: const Icon(Icons.arrow_back,
-                            color: Colors.white),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  /// TITLE
-                  Text(
-                    "Verify Code",
-                    style: TextStyle(
-                      fontFamily: "Inter",
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: greenColor,
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  Column(
-                    children: [
-                      const Text(
-                        "Please enter the code we just sent to email",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        "@email@gmail.com",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(width: 220, height: 1, color: greenColor),
-                    ],
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  /// 🔥 OTP BOXES (FIXED CENTER + AUTO MOVE)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(4, (index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: SizedBox(
-                          width: 60,
-                          child: TextField(
-                            controller: controllers[index],
-                            focusNode: focusNodes[index],
-                            textAlign: TextAlign.center,
-                            maxLength: 1,
-                            keyboardType: TextInputType.number,
-
-                            /// 🔥 AUTO PINDAH
-                            onChanged: (value) {
-                              if (value.isNotEmpty) {
-                                if (index < 3) {
-                                  focusNodes[index + 1].requestFocus();
-                                } else {
-                                  focusNodes[index].unfocus();
-                                }
-                              } else {
-                                if (index > 0) {
-                                  focusNodes[index - 1].requestFocus();
-                                }
-                              }
-                            },
-
-                            decoration: InputDecoration(
-                              counterText: "",
-                              enabledBorder: OutlineInputBorder(
-                                borderSide:
-                                    BorderSide(color: greenColor, width: 1.5),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide:
-                                    BorderSide(color: greenColor, width: 2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  /// RESEND
-                  Column(
-                    children: [
-                      const Text("Didn’t receive OTP?"),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text("Resend code"),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  /// VERIFY BUTTON
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        String otp = controllers
-                            .map((c) => c.text)
-                            .join();
-
-                        debugPrint("OTP: $otp");
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: greenColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: const Text(
-                        "Verify",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-                ],
+            children: [
+              Icon(
+                Icons.mark_email_read,
+                size: 90,
+                color: greenColor,
               ),
-            ),
+
+              const SizedBox(height: 24),
+
+              Text(
+                "Verify Your Email",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight:
+                      FontWeight.bold,
+                  color: greenColor,
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              const Text(
+                "We sent a verification link to:",
+                textAlign:
+                    TextAlign.center,
+              ),
+
+              const SizedBox(height: 6),
+
+              Text(
+                widget.email,
+                style:
+                    const TextStyle(
+                  color: Colors.blue,
+                  fontWeight:
+                      FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: isLoading
+                      ? null
+                      : checkVerification,
+                  style:
+                      ElevatedButton
+                          .styleFrom(
+                    backgroundColor:
+                        greenColor,
+                    padding:
+                        const EdgeInsets
+                            .symmetric(
+                      vertical: 16,
+                    ),
+                  ),
+                  child: isLoading
+                      ? const CircularProgressIndicator(
+                          color:
+                              Colors.white,
+                        )
+                      : const Text(
+                          "I Have Verified",
+                          style:
+                              TextStyle(
+                            color: Colors
+                                .white,
+                          ),
+                        ),
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              TextButton(
+                onPressed:
+                    resendVerification,
+                child: const Text(
+                  "Resend Email",
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
