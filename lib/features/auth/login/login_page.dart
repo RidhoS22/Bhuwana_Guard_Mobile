@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
 import '../register/register_page.dart';
 import '../forgot_password/forgot_password.dart';
 import '../../home/home_page.dart';
@@ -15,7 +18,90 @@ class _LoginPageState extends State<LoginPage> {
   final passwordController = TextEditingController();
 
   bool isObscure = true;
+  bool isLoading = false;
+
   final greenColor = const Color(0xFF0F3D2E);
+
+  /// =========================
+  /// LOGIN EMAIL PASSWORD
+  /// =========================
+  Future<void> signIn() async {
+    try {
+      setState(() => isLoading = true);
+
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const EmergencyApp(),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = "Login failed";
+
+      if (e.code == 'user-not-found') {
+        message = "User not found";
+      } else if (e.code == 'wrong-password') {
+        message = "Wrong password";
+      } else if (e.code == 'invalid-email') {
+        message = "Invalid email";
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> signInWithGoogle() async {
+    try {
+      setState(() => isLoading = true);
+
+      final GoogleSignIn googleSignIn =
+          GoogleSignIn.instance;
+
+      await googleSignIn.initialize();
+
+      final GoogleSignInAccount googleUser =
+          await googleSignIn.authenticate();
+
+      final GoogleSignInAuthentication googleAuth =
+          googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
+
+      await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      );
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const EmergencyApp(),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Google Sign In Failed"),
+        ),
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,19 +114,29 @@ class _LoginPageState extends State<LoginPage> {
             top: 40,
             child: Transform.rotate(
               angle: 3.14,
-              child: Image.asset("assets/images/daun_atas.png", width: 140),
+              child: Image.asset(
+                "assets/images/daun_atas.png",
+                width: 140,
+              ),
             ),
           ),
+
           Positioned(
             left: 0,
             bottom: 0,
-            child: Image.asset("assets/images/daun_bawah.png", width: 140),
+            child: Image.asset(
+              "assets/images/daun_bawah.png",
+              width: 140,
+            ),
           ),
+
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 40),
 
@@ -56,7 +152,9 @@ class _LoginPageState extends State<LoginPage> {
                             color: greenColor,
                           ),
                         ),
+
                         const SizedBox(height: 6),
+
                         Column(
                           children: [
                             Text(
@@ -67,7 +165,9 @@ class _LoginPageState extends State<LoginPage> {
                                 color: greenColor,
                               ),
                             ),
+
                             const SizedBox(height: 4),
+
                             Container(
                               width: 220,
                               height: 1,
@@ -81,9 +181,14 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 40),
 
-                  const Text("Enter Email",
-                      style: TextStyle(fontFamily: "Poppins")),
+                  const Text(
+                    "Enter Email",
+                    style:
+                        TextStyle(fontFamily: "Poppins"),
+                  ),
+
                   const SizedBox(height: 6),
+
                   _inputField(
                     controller: emailController,
                     hint: "Enter your email",
@@ -92,9 +197,14 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 20),
 
-                  const Text("Enter Password",
-                      style: TextStyle(fontFamily: "Poppins")),
+                  const Text(
+                    "Enter Password",
+                    style:
+                        TextStyle(fontFamily: "Poppins"),
+                  ),
+
                   const SizedBox(height: 6),
+
                   _inputField(
                     controller: passwordController,
                     hint: "Enter your password",
@@ -109,7 +219,8 @@ class _LoginPageState extends State<LoginPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const ForgotPasswordPage(),
+                            builder: (_) =>
+                                const ForgotPasswordPage(),
                           ),
                         );
                       },
@@ -117,7 +228,8 @@ class _LoginPageState extends State<LoginPage> {
                         "Forgot Password?",
                         style: TextStyle(
                           fontFamily: "Poppins",
-                          decoration: TextDecoration.underline,
+                          decoration:
+                              TextDecoration.underline,
                           color: Colors.blue,
                         ),
                       ),
@@ -126,35 +238,37 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 20),
 
-                  /// 🔥 SIGN IN BUTTON
+                  /// LOGIN BUTTON
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const EmergencyApp(),
-                          ),
-                        );
-                      },
+                      onPressed:
+                          isLoading ? null : signIn,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: greenColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding:
+                            const EdgeInsets.symmetric(
+                                vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius:
+                              BorderRadius.circular(14),
                         ),
                         elevation: 3,
                       ),
-                      child: const Text(
-                        "Sign In",
-                        style: TextStyle(
-                          fontFamily: "Inter",
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: isLoading
+                          ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                          : const Text(
+                              "Sign In",
+                              style: TextStyle(
+                                fontFamily: "Inter",
+                                fontSize: 16,
+                                color: Colors.white,
+                                fontWeight:
+                                    FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
 
@@ -162,9 +276,13 @@ class _LoginPageState extends State<LoginPage> {
 
                   Row(
                     children: [
-                      Expanded(child: Divider(color: greenColor)),
+                      Expanded(
+                          child:
+                              Divider(color: greenColor)),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        padding:
+                            const EdgeInsets.symmetric(
+                                horizontal: 8),
                         child: Text(
                           "or sign in with",
                           style: TextStyle(
@@ -173,35 +291,47 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-                      Expanded(child: Divider(color: greenColor)),
+                      Expanded(
+                          child:
+                              Divider(color: greenColor)),
                     ],
                   ),
 
                   const SizedBox(height: 20),
 
-                  /// 🔥 GOOGLE BUTTON (ADA EFFECT)
+                  /// GOOGLE BUTTON
                   Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(14),
-                      onTap: () {},
+                      borderRadius:
+                          BorderRadius.circular(14),
+                      onTap: signInWithGoogle,
                       child: Ink(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding:
+                            const EdgeInsets.symmetric(
+                                vertical: 14),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius:
+                              BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Colors.grey.shade300,
+                          ),
                         ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment:
+                              MainAxisAlignment.center,
                           children: [
                             Image.network(
                               "https://cdn-icons-png.flaticon.com/512/2991/2991148.png",
                               height: 20,
                             ),
+
                             const SizedBox(width: 10),
-                            const Text("Continue with Google"),
+
+                            const Text(
+                                "Continue with Google"),
                           ],
                         ),
                       ),
@@ -210,22 +340,27 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: 25),
 
-                  /// 🔥 GO TO REGISTER
                   Center(
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius:
+                          BorderRadius.circular(8),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => const RegisterPage()),
+                            builder: (_) =>
+                                const RegisterPage(),
+                          ),
                         );
                       },
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        padding:
+                            const EdgeInsets.symmetric(
+                                vertical: 4),
                         child: RichText(
                           text: TextSpan(
-                            text: "Don’t have an account? ",
+                            text:
+                                "Don’t have an account? ",
                             style: TextStyle(
                               fontFamily: "Poppins",
                               color: greenColor,
@@ -235,7 +370,8 @@ class _LoginPageState extends State<LoginPage> {
                                 text: "Sign Up",
                                 style: TextStyle(
                                   color: Colors.blue,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight:
+                                      FontWeight.bold,
                                 ),
                               ),
                             ],
@@ -263,14 +399,19 @@ class _LoginPageState extends State<LoginPage> {
   }) {
     return TextField(
       controller: controller,
-      obscureText: isPassword ? isObscure : false,
+      obscureText:
+          isPassword ? isObscure : false,
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: Icon(icon),
+
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
-                    isObscure ? Icons.visibility_off : Icons.visibility),
+                  isObscure
+                      ? Icons.visibility_off
+                      : Icons.visibility,
+                ),
                 onPressed: () {
                   setState(() {
                     isObscure = !isObscure;
@@ -278,14 +419,22 @@ class _LoginPageState extends State<LoginPage> {
                 },
               )
             : null,
+
         enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Color(0xFF0F3D2E)),
-          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Color(0xFF0F3D2E),
+          ),
+          borderRadius:
+              BorderRadius.circular(12),
         ),
+
         focusedBorder: OutlineInputBorder(
-          borderSide:
-              const BorderSide(color: Color(0xFF0F3D2E), width: 2),
-          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Color(0xFF0F3D2E),
+            width: 2,
+          ),
+          borderRadius:
+              BorderRadius.circular(12),
         ),
       ),
     );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../login/login_page.dart';
-import '../verify/verify_page.dart'; // 🔥 TAMBAHAN
+import '../verify/verify_page.dart'; 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
