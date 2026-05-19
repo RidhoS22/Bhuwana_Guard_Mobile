@@ -29,11 +29,57 @@ class _LoginPageState extends State<LoginPage> {
     try {
       setState(() => isLoading = true);
 
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      UserCredential userCredential =
+          await FirebaseAuth.instance
+              .signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
+      /// REFRESH DATA USER
+      await userCredential.user?.reload();
+
+      /// AMBIL USER TERBARU
+      User? user = FirebaseAuth.instance.currentUser;
+
+      /// CEK VERIFIED
+      if (user != null && !user.emailVerified) {
+        await FirebaseAuth.instance.signOut();
+
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                title: const Text(
+                  "Email Belum Diverifikasi",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                content: const Text(
+                  "Silakan cek gmail kamu lalu verifikasi email terlebih dahulu sebelum login.",
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text("OK"),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+
+        return;
+      }
+
+      /// JIKA VERIFIED
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -54,7 +100,14 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          content: Text(message),
+        ),
       );
     } finally {
       setState(() => isLoading = false);
