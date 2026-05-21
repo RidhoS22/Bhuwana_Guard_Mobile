@@ -5,7 +5,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'profile_page.dart';
 import '../safety_guide/safety_guide_page.dart';
 import '../emergency_contact/emergency_contact_page.dart';
-import '../history/history.dart';
 
 void main() {
   runApp(const EmergencyApp());
@@ -79,7 +78,7 @@ class _EmergencyAppState extends State<EmergencyApp> with SingleTickerProviderSt
                 onToggleTheme: _toggleTheme,
                 pulseAnimation: _pulseAnimation,
               ),
-              const HistoryTab(),
+              const Center(child: Text('History', style: TextStyle(fontSize: 22))),
               const ProfilePage(),
             ],
           ),
