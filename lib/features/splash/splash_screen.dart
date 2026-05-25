@@ -35,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
             /// 🔥 LOGO
             Image.asset(
-              "assets/images/logo.png", // ← ganti sesuai nama logo kamu
+              "assets/images/Logo.png", // ← ganti sesuai nama logo kamu
               width: 120,
             ),
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../login/login_page.dart';
-import '../reset_password/reset_password.dart';
+import '../../../services/auth_service.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -10,24 +10,143 @@ class ForgotPasswordPage extends StatefulWidget {
 }
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
-  final List<TextEditingController> controllers =
-      List.generate(4, (_) => TextEditingController());
+  final authService = AuthService();
+  final emailController = TextEditingController();
 
-  final List<FocusNode> focusNodes =
-      List.generate(4, (_) => FocusNode());
+  bool isLoading = false;
 
   final greenColor = const Color(0xFF0F3D2E);
 
-  void handleInput(String value, int index) {
-    if (value.isNotEmpty) {
-      if (index < 3) {
-        FocusScope.of(context).requestFocus(focusNodes[index + 1]);
+  /// ========================================
+  /// SEND PASSWORD RESET EMAIL
+  /// ========================================
+  Future<void> sendPasswordResetEmail() async {
+    final email = emailController.text.trim().toLowerCase();
+
+    // Validasi email kosong
+    if (email.isEmpty) {
+      showError('❌ Silakan masukkan email Anda');
+      return;
+    }
+
+    // Validasi format email
+    if (!_isValidEmail(email)) {
+      showError('❌ Format email tidak valid\nContoh: user@example.com');
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      print('\n════════════════════════════════════════');
+      print('🔐 PROSES FORGOT PASSWORD DIMULAI');
+      print('════════════════════════════════════════');
+      print('Email: $email\n');
+
+      // Send reset password email
+      // Method ini juga cek apakah email ada atau tidak
+      bool emailExists = await authService.sendPasswordResetEmail(email);
+
+      if (!emailExists) {
+        print('❌ EMAIL TIDAK DITEMUKAN DI FIREBASE\n');
+        if (mounted) {
+          showError(
+            '❌ Email Tidak Ditemukan\n\n'
+            'Email: $email\n\n'
+            'Email ini tidak terdaftar di sistem\n'
+            'Bhuwana Guard.\n\n'
+            'Silakan:\n'
+            '✓ Periksa kembali email Anda\n'
+            '✓ Atau buat akun baru terlebih dahulu'
+          );
+        }
+        return;
       }
-    } else {
-      if (index > 0) {
-        FocusScope.of(context).requestFocus(focusNodes[index - 1]);
+
+      print('✅✅ RESET EMAIL BERHASIL DIKIRIM ✅✅\n');
+
+      if (mounted) {
+        showSuccess(
+          '✅ Email Reset Password Dikirim!\n\n'
+          'Ke: $email\n\n'
+          'Silakan lakukan:\n'
+          '1️⃣ Buka email Anda\n'
+          '2️⃣ Cari email dari Bhuwana Guard\n'
+          '3️⃣ Klik link "Reset Password"\n'
+          '4️⃣ Buat password baru Anda\n\n'
+          '⏰ Link reset berlaku 1 jam'
+        );
+
+        // Kembali ke login page setelah 2 detik
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const LoginPage(),
+              ),
+            );
+          }
+        });
+      }
+    } on Exception catch (e) {
+      print('❌ ERROR: ${e.toString()}');
+      if (mounted) {
+        String errorMsg = e.toString().replaceAll('Exception: ', '');
+        showError(
+          '❌ Error: $errorMsg\n\n'
+          'Silakan coba lagi atau hubungi support'
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
       }
     }
+  }
+
+  /// ========================================
+  /// VALIDASI FORMAT EMAIL
+  /// ========================================
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email);
+  }
+
+
+
+  /// ========================================
+  /// SHOW ERROR SNACKBAR
+  /// ========================================
+  void showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// ========================================
+  /// SHOW SUCCESS SNACKBAR
+  /// ========================================
+  void showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    super.dispose();
   }
 
   @override
@@ -61,148 +180,149 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         ),
       ),
 
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Column(
-            children: [
+      body: _buildEmailScreen(),
+    );
+  }
 
-              const SizedBox(height: 20),
+  /// ========================================
+  /// BUILD EMAIL INPUT SCREEN
+  /// ========================================
+  Widget _buildEmailScreen() {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: Column(
+          children: [
+            const SizedBox(height: 40),
 
-              /// TEXT
-              const Text(
-                "Please enter the code we just sent to email",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: "Inter",
-                  fontSize: 13,
+            /// ICON
+            Icon(
+              Icons.email_outlined,
+              size: 80,
+              color: greenColor,
+            ),
+
+            const SizedBox(height: 30),
+
+            /// TITLE
+            const Text(
+              "Reset Password",
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            /// DESCRIPTION
+            const Text(
+              "Masukkan email Anda dan kami akan mengirimkan link untuk mereset password",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: "Inter",
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+
+            const SizedBox(height: 40),
+
+            /// EMAIL INPUT FIELD
+            TextField(
+              controller: emailController,
+              enabled: !isLoading,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                hintText: "Masukkan email Anda",
+                prefixIcon: const Icon(Icons.email_outlined),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: greenColor, width: 1.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: greenColor, width: 2),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
+            ),
 
-              const SizedBox(height: 4),
+            const SizedBox(height: 40),
 
-              Text(
-                "@email@gmail.com",
-                style: TextStyle(
-                  fontFamily: "Inter",
-                  fontSize: 13,
-                  color: Colors.blue,
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              /// OTP BOXES
-              Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(4, (index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: SizedBox(
-                          width: 60,
-                          child: TextField(
-                            controller: controllers[index],
-                            focusNode: focusNodes[index],
-                            textAlign: TextAlign.center,
-                            maxLength: 1,
-                            keyboardType: TextInputType.number,
-
-                            /// AUTO PINDAH
-                            onChanged: (value) {
-                              if (value.isNotEmpty) {
-                                if (index < 3) {
-                                  focusNodes[index + 1].requestFocus();
-                                } else {
-                                  focusNodes[index].unfocus();
-                                }
-                              } else {
-                                if (index > 0) {
-                                  focusNodes[index - 1].requestFocus();
-                                }
-                              }
-                            },
-
-                            decoration: InputDecoration(
-                              counterText: "",
-                              enabledBorder: OutlineInputBorder(
-                                borderSide:
-                                    BorderSide(color: greenColor, width: 1.5),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide:
-                                    BorderSide(color: greenColor, width: 2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
+            /// SEND BUTTON
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: isLoading ? null : sendPasswordResetEmail,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: greenColor,
+                  disabledBackgroundColor: Colors.grey,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        "Kirim Link Reset",
+                        style: TextStyle(
+                          fontFamily: "Poppins",
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+              ),
+            ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-              /// RESEND
-              Column(
+            /// BACK TO LOGIN
+            GestureDetector(
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LoginPage(),
+                  ),
+                );
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    "Didn't receive OTP?",
+                    "Kembali ke ",
                     style: TextStyle(
                       fontFamily: "Inter",
-                      fontSize: 12,
+                      fontSize: 14,
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () {},
-                    child: const Text(
-                      "Resend code",
-                      style: TextStyle(
-                        fontFamily: "Inter",
-                        fontSize: 12,
-                        color: Colors.blue,
-                        decoration: TextDecoration.underline,
-                      ),
+                  Text(
+                    "Login",
+                    style: TextStyle(
+                      fontFamily: "Inter",
+                      fontSize: 14,
+                      color: greenColor,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
                     ),
                   ),
                 ],
               ),
-
-              const SizedBox(height: 40), // 🔥 GANTI SPACER JADI INI
-
-              /// VERIFY BUTTON
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ResetPasswordPage(),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: greenColor,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: const Text(
-                    "Verify",
-                    style: TextStyle(
-                      fontFamily: "Poppins",
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
