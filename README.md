@@ -31,16 +31,35 @@ Project ini dibuat sebagai bagian dari pengembangan aplikasi mobile dan portfoli
 
 ## Preview Aplikasi
 
-| Login                                     | Home                                    | History                                       | Profile                                       |
-| ----------------------------------------- | --------------------------------------- | --------------------------------------------- | --------------------------------------------- |
-| ![Login](docs/screenshots/LoginForm.jpeg) | ![Home](docs/screenshots/HomePage.jpeg) | ![History](docs/screenshots/HistoryPage.jpeg) | ![Profile](docs/screenshots/ProfilePage.jpeg) |
+<table>
+  <tr>
+    <td align="center"><b>Login</b></td>
+    <td align="center"><b>Home</b></td>
+    <td align="center"><b>History</b></td>
+    <td align="center"><b>Profile</b></td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/screenshots/LoginForm.jpeg" width="170"/>
+    </td>
+    <td align="center">
+      <img src="docs/screenshots/HomePage.jpeg" width="170"/>
+    </td>
+    <td align="center">
+      <img src="docs/screenshots/HistoryPage.jpeg" width="170"/>
+    </td>
+    <td align="center">
+      <img src="docs/screenshots/ProfilePage.jpeg" width="170"/>
+    </td>
+  </tr>
+</table>
 
 ## UI/UX Design
 
 Desain antarmuka aplikasi dibuat menggunakan Figma sebagai acuan dalam pengembangan tampilan aplikasi.
 
 Figma Preview:
-[Masukkan link Figma view-only di sini]
+https://www.figma.com/design/nK69FCzoVV3Vfh3JVWI4Qn/Bhuwana-Guard?node-id=8-175&t=lz026M821MPqjuRF-1
 
 ## Download APK
 
@@ -146,4 +165,5 @@ Project ini masih berada dalam tahap pengembangan dan testing. Beberapa fitur da
 Dikembangkan oleh:
 
 * Ridho Syahfero
-* Raja Agustami Efendi
+* Rajab Agustami Efendi
+* Hengky Indrawan
