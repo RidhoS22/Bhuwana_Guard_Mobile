@@ -59,13 +59,13 @@ Catatan: Aplikasi juga didistribusikan kepada tester menggunakan Firebase App Di
 Clone repository:
 
 ```bash
-git clone https://github.com/username/nama-repo.git](https://github.com/RidhoS22/Bhuwana_Guard_Mobile.git
+git clone https://github.com/RidhoS22/Bhuwana_Guard_Mobile.git
 ```
 
 Masuk ke folder project:
 
 ```bash
-cd nama-repo
+cd bhuwana_guard_mobile
 ```
 
 Install dependencies:
