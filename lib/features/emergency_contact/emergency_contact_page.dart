@@ -9,13 +9,14 @@ class EmergencyContactPage extends StatefulWidget {
   const EmergencyContactPage({super.key, required this.fromPage});
 
   static const Map<String, String> emergencyNumbers = {
-    "Police": "0896-3716-7773",
-    "Ambulance": "119",
-    "Fire Dept": "113",
-    "Basarnas": "115",
-    "Karhutla": "0800-0000-000",
-    "EFRP": "0800-0000-001",
-  };
+  "Darurat Umum": "112",
+  "Polisi": "110",
+  "Ambulans": "119",
+  "Pemadam Kebakaran": "113",
+  "Basarnas/SAR": "115",
+  "Bencana Alam": "129",
+  "PLN": "123",
+};
 
   @override
   State<EmergencyContactPage> createState() => _EmergencyContactPageState();
