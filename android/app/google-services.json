@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "879775374617",
+    "project_id": "bhuwana-guard",
+    "storage_bucket": "bhuwana-guard.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:879775374617:android:289a0efe0536c08537f988",
+        "android_client_info": {
+          "package_name": "com.example.bhuwana_guard_mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "879775374617-cu6l5noroui907im0to39jd2g9vrjlq9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.bhuwana_guard_mobile",
+            "certificate_hash": "ac91e72018a4b1a24460a7d9173c2ab328a50e16"
+          }
+        },
+        {
+          "client_id": "879775374617-ubhq5snsbrthhg4an615n5si2927k0s1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4YwNusnqogvkTpsarjQu0u9oCS1bQcKw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "879775374617-ubhq5snsbrthhg4an615n5si2927k0s1.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "879775374617-lftieqdrh797jpdcdbuposile521rhub.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.bhuwanaGuardMobile"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
