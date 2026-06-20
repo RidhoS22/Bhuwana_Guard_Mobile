@@ -1,12 +1,87 @@
 import 'package:flutter/material.dart';
+import 'calling_page.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
-class EmergencyContactPage extends StatelessWidget {
+class EmergencyContactPage extends StatefulWidget {
   final String fromPage;
 
-  const EmergencyContactPage({
-    super.key,
-    required this.fromPage,
-  });
+  const EmergencyContactPage({super.key, required this.fromPage});
+
+  static const Map<String, String> emergencyNumbers = {
+    "Police": "0896-3716-7773",
+    "Ambulance": "119",
+    "Fire Dept": "113",
+    "Basarnas": "115",
+    "Karhutla": "0800-0000-000",
+    "EFRP": "0800-0000-001",
+  };
+
+  @override
+  State<EmergencyContactPage> createState() => _EmergencyContactPageState();
+}
+
+class _EmergencyContactPageState extends State<EmergencyContactPage> {
+  String locationText = "Mendeteksi lokasi...";
+
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
+      if (!serviceEnabled) {
+        setState(() {
+          locationText = "GPS tidak aktif";
+        });
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          locationText = "Izin lokasi ditolak";
+        });
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      Placemark place = placemarks.first;
+
+      if (!mounted) return;
+
+      setState(() {
+        locationText =
+            "${place.street ?? ''}, "
+            "${place.subLocality ?? ''}, "
+            "${place.locality ?? ''}, "
+            "${place.administrativeArea ?? ''}";
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        locationText = "Lokasi tidak ditemukan";
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,12 +96,7 @@ class EmergencyContactPage extends StatelessWidget {
         centerTitle: true,
 
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.white,
-            size: 18,
-          ),
-
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 18),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -45,15 +115,10 @@ class EmergencyContactPage extends StatelessWidget {
 
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: 800,
-          ),
+          constraints: const BoxConstraints(maxWidth: 800),
 
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 30,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
 
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,39 +130,30 @@ class EmergencyContactPage extends StatelessWidget {
                     horizontal: 14,
                     vertical: 14,
                   ),
-
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.grey.shade300,
-                    ),
-
+                    border: Border.all(color: Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(12),
                   ),
-
                   child: Row(
                     children: [
                       Container(
                         width: 28,
                         height: 28,
-
                         decoration: const BoxDecoration(
                           color: Color(0xFFFFE6E6),
                           shape: BoxShape.circle,
                         ),
-
                         child: const Icon(
                           Icons.location_on,
                           color: Colors.red,
                           size: 18,
                         ),
                       ),
-
                       const SizedBox(width: 12),
-
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          "Desa kertosono, Kecamatan kertoyani",
-                          style: TextStyle(
+                          locationText,
+                          style: const TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 13,
                             color: Color(0xFF154E39),
@@ -110,58 +166,6 @@ class EmergencyContactPage extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 24),
-
-                /// NEAREST CALL
-                Container(
-                  width: double.infinity,
-                  height: 64,
-
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                    ),
-
-                    child: Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
-
-                      children: [
-                        const Text(
-                          "Nearest Emergency Call",
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-
-                        Container(
-                          width: 42,
-                          height: 42,
-
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFC50000),
-                            shape: BoxShape.circle,
-                          ),
-
-                          child: const Icon(
-                            Icons.call,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
 
                 const Text(
                   "Callable Options",
@@ -181,15 +185,14 @@ class EmergencyContactPage extends StatelessWidget {
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                     childAspectRatio: 2.8,
-
-                    children: const [
-                      EmergencyCard(title: "Police"),
-                      EmergencyCard(title: "Ambulance"),
-                      EmergencyCard(title: "Fire Dept"),
-                      EmergencyCard(title: "Basarnas"),
-                      EmergencyCard(title: "Karhutla"),
-                      EmergencyCard(title: "EFRP"),
-                    ],
+                    children: EmergencyContactPage.emergencyNumbers.entries.map(
+                      (entry) {
+                        return EmergencyCard(
+                          title: entry.key,
+                          phoneNumber: entry.value,
+                        );
+                      },
+                    ).toList(),
                   ),
                 ),
               ],
@@ -203,61 +206,62 @@ class EmergencyContactPage extends StatelessWidget {
 
 class EmergencyCard extends StatelessWidget {
   final String title;
+  final String phoneNumber;
 
   const EmergencyCard({
     super.key,
     required this.title,
+    required this.phoneNumber,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-      ),
-
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: Colors.grey.shade300,
-        ),
-
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-      ),
-
-      child: Row(
-        mainAxisAlignment:
-            MainAxisAlignment.spaceBetween,
-
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              color: Color(0xFF154E39),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-
-          Container(
-            width: 34,
-            height: 34,
-
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Colors.red,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CallingPage(
+                title: "$title Call",
+                connectingTo: title,
+                phoneNumber: phoneNumber,
               ),
-
-              shape: BoxShape.circle,
             ),
-
-            child: const Icon(
-              Icons.call,
-              color: Colors.red,
-              size: 18,
-            ),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12),
           ),
-        ],
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  color: Color(0xFF154E39),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.red),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.call, color: Colors.red, size: 18),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

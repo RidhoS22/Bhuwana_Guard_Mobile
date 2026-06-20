@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../register/register_page.dart';
 import '../forgot_password/forgot_password.dart';
@@ -11,16 +12,38 @@ class LoginPage extends StatefulWidget {
 
   @override
   State<LoginPage> createState() => _LoginPageState();
+  
 }
 
 class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+
   bool isObscure = true;
   bool isLoading = false;
 
   final greenColor = const Color(0xFF0F3D2E);
+
+  bool _isGoogleInit = false;
+
+@override
+  void initState() {
+    super.initState();
+    _ensureGoogleInit();
+  }
+
+  Future<void> _ensureGoogleInit() async {
+    if (_isGoogleInit) return;
+    await _googleSignIn.initialize(
+      // WAJIB: isi dengan Web client ID (client_type 3) dari google-services.json
+      // atau dari Firebase Console > Authentication > Sign-in method > Google
+      serverClientId:
+          '879775374617-ubhq5snsbrthhg4an615n5si2927k0s1.apps.googleusercontent.com',
+    );
+    _isGoogleInit = true;
+  }
 
   /// =========================
   /// LOGIN EMAIL PASSWORD
@@ -114,47 +137,157 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _showPhoneNumberDialog(
+    DocumentReference docRef) async {
+  final phoneController = TextEditingController();
+
+  await showDialog(
+    context: context,
+    barrierDismissible: false, // wajib diisi dulu
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text(
+          "Lengkapi Profil",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Masukkan nomor HP kamu untuk melengkapi profil.",
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                hintText: "Contoh: 08123456789",
+                prefixIcon: const Icon(Icons.phone),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context), // skip
+            child: const Text("Lewati"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0F3D2E),
+            ),
+            onPressed: () async {
+              final phone = phoneController.text.trim();
+              if (phone.isNotEmpty) {
+                // Update ke Firestore
+                await docRef.update({'phoneNumber': phone});
+              }
+              if (mounted) Navigator.pop(context);
+            },
+            child: const Text(
+              "Simpan",
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
   Future<void> signInWithGoogle() async {
-    try {
-      setState(() => isLoading = true);
+  try {
+    setState(() => isLoading = true);
 
-      final GoogleSignIn googleSignIn =
-          GoogleSignIn.instance;
+    await _ensureGoogleInit();
 
-      await googleSignIn.initialize();
+    // v7: authenticate() menggantikan signIn()
+    final GoogleSignInAccount googleUser =
+        await _googleSignIn.authenticate();
 
-      final GoogleSignInAccount googleUser =
-          await googleSignIn.authenticate();
+    // v7: authentication sinkron, hanya ada idToken
+    final idToken = googleUser.authentication.idToken;
 
-      final GoogleSignInAuthentication googleAuth =
-          googleUser.authentication;
+    if (idToken == null) {
+      throw Exception('idToken null — cek serverClientId / SHA-1 di Firebase');
+    }
 
-      final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-      );
+    final credential = GoogleAuthProvider.credential(idToken: idToken);
 
-      await FirebaseAuth.instance.signInWithCredential(
-        credential,
-      );
+    final UserCredential userCredential =
+        await FirebaseAuth.instance.signInWithCredential(credential);
+
+    final User? user = userCredential.user;
+    if (user == null) {
+      throw Exception('User tidak ditemukan setelah login');
+    }
+
+    // Simpan ke Firestore (hanya untuk user baru)
+    final docRef =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+    final docSnapshot = await docRef.get();
+
+    if (!docSnapshot.exists) {
+      await docRef.set({
+        'uid': user.uid,
+        'name': user.displayName ?? '',
+        'email': user.email ?? '',
+        'photoURL': user.photoURL ?? '',
+        'phoneNumber': '',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const EmergencyApp(),
-          ),
-        );
+        await _showPhoneNumberDialog(docRef);
       }
-    } catch (e) {
+    }
+
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const EmergencyApp()),
+      );
+    }
+  } on GoogleSignInException catch (e) {
+    // user menekan batal di dialog pilih akun
+    if (e.code == GoogleSignInExceptionCode.canceled) return;
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Google Sign In Failed"),
+        SnackBar(
+          content: Text('Google Sign-In error: ${e.description}'),
+          backgroundColor: Colors.red,
         ),
       );
-    } finally {
-      setState(() => isLoading = false);
     }
+  } on FirebaseAuthException catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Auth Error: ${e.message}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } finally {
+    if (mounted) setState(() => isLoading = false);
   }
+}
 
   @override
   Widget build(BuildContext context) {

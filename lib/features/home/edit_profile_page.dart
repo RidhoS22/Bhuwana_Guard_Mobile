@@ -1,7 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'change_password_page.dart';
-// 🔥 Ganti 'nama_proyek_kamu' sesuai dengan nama package proyek tim kamu
 import 'profile_language_service.dart'; // Pastikan path ini sesuai dengan struktur folder proyek kamu
 
 class EditProfilePage extends StatefulWidget {
@@ -235,41 +233,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
 
                         const SizedBox(height: 15),
-
-                        /// 🔥 CHANGE PASSWORD BUTTON (URUSAN TEMAN TIM)
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: OutlinedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const ChangePasswordPage(),
-                                ),
-                              );
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(
-                                color: buttonColor,
-                                width: 1.5,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              "Change Password",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: buttonColor,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 40),
                       ],
                     ),
                   ),

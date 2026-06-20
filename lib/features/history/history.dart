@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
-import 'detailreportpage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'detail_flora_report_page.dart';
+import 'detail_fauna_report_page.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 class HistoryTab extends StatefulWidget {
   const HistoryTab({super.key});
@@ -10,45 +15,179 @@ class HistoryTab extends StatefulWidget {
 
 class _HistoryTabState extends State<HistoryTab> {
   String _currentFilter = "All Report";
+  String userName = "Loading...";
+  String userLocation = "Loading...";
 
-  // --- DATA SUMBER (PASTIKAN TYPE SESUAI DENGAN TITLE) ---
-  final List<Map<String, dynamic>> _allReports = [
-    {
-      "title": "Flora Report",
-      "type": "Flora", // Data Flora
-      "status": "In progress",
-      "date": "March 25, 2028",
-      "icon": Icons.park,
-    },
-    {
-      "title": "Fauna Report",
-      "type": "Fauna", // Data Fauna
-      "status": "Closed",
-      "date": "June 22, 2027",
-      "icon": Icons.pets,
-    },
-    {
-      "title": "Flora Report",
-      "type": "Flora",
-      "status": "In progress",
-      "date": "March 25, 2028",
-      "icon": Icons.park,
-    },
-    {
-      "title": "Fauna Report",
-      "type": "Fauna",
-      "status": "Closed",
-      "date": "June 22, 2027",
-      "icon": Icons.pets,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData(); // nama dari Firebase
+    _getCurrentLocation(); // lokasi dari GPS
+  }
 
-  // Logika Filter
-  List<Map<String, dynamic>> get _filteredReports {
-    if (_currentFilter == "All Report") return _allReports;
-    return _allReports
-        .where((r) => r['type'] == _currentFilter.split(" ")[0])
-        .toList();
+  Future<void> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
+    if (!serviceEnabled) {
+      setState(() {
+        userLocation = "GPS tidak aktif";
+      });
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied) {
+      setState(() {
+        userLocation = "Izin lokasi ditolak";
+      });
+      return;
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      setState(() {
+        userLocation = "Izin lokasi permanen ditolak";
+      });
+      return;
+    }
+
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    List<Placemark> placemarks = await placemarkFromCoordinates(
+      position.latitude,
+      position.longitude,
+    );
+
+    if (placemarks.isNotEmpty) {
+      final place = placemarks.first;
+
+      setState(() {
+        userLocation =
+            "${place.subAdministrativeArea ?? ''}, ${place.administrativeArea ?? ''}";
+      });
+    }
+  }
+
+  Future<void> _loadUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (mounted && userDoc.exists) {
+      final data = userDoc.data()!;
+      setState(() {
+        userName = data['name'] ?? 'User';
+      });
+    }
+  }
+
+  // Filter Reports - Rebuild saat filter berubah
+  Stream<List<Map<String, dynamic>>> get _getReportsStream {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      debugPrint('ERROR: User not logged in');
+      return Stream.value([]);
+    }
+
+    debugPrint('Loading reports for user: ${user.uid}');
+    debugPrint('Current filter: $_currentFilter');
+
+    // Query hanya menggunakan where, sorting dilakukan di client-side
+    return FirebaseFirestore.instance
+        .collection('reports')
+        .where('userId', isEqualTo: user.uid)
+        .snapshots()
+        .map((snapshot) {
+          debugPrint('Got ${snapshot.docs.length} reports from Firestore');
+
+          // Convert dan sort di client-side
+          final allReports = snapshot.docs.map((doc) {
+            final data = doc.data();
+            debugPrint('Report data: ${data['type']}, ${data['status']}');
+
+            return {
+              'id': doc.id,
+              'title': '${data['type'] ?? 'Unknown'} Report',
+              'type': data['type'] ?? 'Unknown',
+              'status': data['status'] ?? 'Pending',
+              'date': _formatDate(data['createdAt']),
+              'address': data['address'] ?? 'Alamat tidak tersedia',
+              'imageUrl': data['imageUrl'] ?? '',
+              'latitude': data['latitude'] ?? 0.0,
+              'longitude': data['longitude'] ?? 0.0,
+              'reporterName': data['reporterName'] ?? 'Unknown',
+              'reporterEmail': data['reporterEmail'] ?? '',
+              'updatedAt': data['updatedAt'],
+              'createdAtTimestamp': data['createdAt'] ?? Timestamp.now(),
+              'icon': data['type'].toString().toLowerCase().contains('flora')
+                  ? Icons.park
+                  : Icons.pets,
+            };
+          }).toList();
+
+          // Sort by createdAt (terbaru di atas) di client-side
+          allReports.sort((a, b) {
+            final aTime = a['createdAtTimestamp'] as Timestamp;
+            final bTime = b['createdAtTimestamp'] as Timestamp;
+            return bTime.compareTo(aTime);
+          });
+
+          // Apply filter
+          if (_currentFilter == "All Report") {
+            debugPrint('Showing all ${allReports.length} reports');
+            return allReports;
+          }
+
+          final filterType = _currentFilter.split(" ")[0].toLowerCase();
+          final filtered = allReports
+              .where(
+                (r) => r['type'].toString().toLowerCase().contains(filterType),
+              )
+              .toList();
+          debugPrint('Filtered to $filterType: ${filtered.length} reports');
+          return filtered;
+        });
+  }
+
+  String _formatDate(dynamic timestamp) {
+    if (timestamp == null) return 'Date not available';
+    try {
+      final date = (timestamp as Timestamp).toDate();
+      return '${date.day} ${_monthName(date.month)} ${date.year} at ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return 'Date not available';
+    }
+  }
+
+  String _monthName(int month) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return months[month - 1];
   }
 
   @override
@@ -68,22 +207,29 @@ class _HistoryTabState extends State<HistoryTab> {
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
-                  children: const [
+                  children: [
                     Text(
-                      "Karel Septian",
-                      style: TextStyle(
+                      userName,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                     ),
                     Text(
-                      "Desa kertosono, Kecamatan kertoyani",
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                      userLocation,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
+
                 const SizedBox(width: 15),
+
                 const CircleAvatar(
                   radius: 25,
                   backgroundColor: Color(0xFF7E9790),
@@ -140,33 +286,141 @@ class _HistoryTabState extends State<HistoryTab> {
             ),
           ),
 
-          // --- LIST HISTORY (BAGIAN YANG DIBETULKAN) ---
+          // --- LIST HISTORY REAL-TIME DARI FIREBASE ---
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: _filteredReports.length,
-              itemBuilder: (context, index) {
-                // Ambil data item berdasarkan index hasil filter
-                final item = _filteredReports[index];
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              key: ValueKey(
+                _currentFilter,
+              ), // Rebuild stream saat filter berubah
+              stream: _getReportsStream,
+              builder: (context, snapshot) {
+                debugPrint('StreamBuilder state: ${snapshot.connectionState}');
 
-                return GestureDetector(
-                  onTap: () {
-                    // MENGIRIM TYPE YANG SESUAI (Flora ke Flora, Fauna ke Fauna)
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DetailReportPage(
-                          reportType: item['type'], // Ini kunci perbaikannya
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Loading reports...'),
+                      ],
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  debugPrint('StreamBuilder error: ${snapshot.error}');
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red.shade400,
                         ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error: ${snapshot.error}',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.red.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => setState(() {}),
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final reports = snapshot.data ?? [];
+                debugPrint('Displaying ${reports.length} reports');
+
+                if (reports.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.inbox,
+                          size: 80,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Belum ada laporan',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Buat laporan baru untuk memulai',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  itemCount: reports.length,
+                  itemBuilder: (context, index) {
+                    final item = reports[index];
+
+                    return GestureDetector(
+                      onTap: () {
+                        String titleLaporan = (item['title'] ?? '')
+                            .toString()
+                            .toLowerCase();
+
+                        String currentReportId =
+                            (item['id'] ?? item['title'] ?? '').toString();
+
+                        if (titleLaporan.contains('fauna')) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DetailFaunaReportPage(
+                                reportId: currentReportId,
+                              ),
+                            ),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DetailFloraReportPage(
+                                reportId: currentReportId,
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: _buildHistoryCard(
+                        title: item['title'],
+                        status: item['status'],
+                        date: item['date'],
+                        iconData: item['icon'],
+                        address: item['address'],
                       ),
                     );
                   },
-                  child: _buildHistoryCard(
-                    title: item['title'],
-                    status: item['status'],
-                    date: item['date'],
-                    iconData: item['icon'],
-                  ),
                 );
               },
             ),
@@ -182,6 +436,7 @@ class _HistoryTabState extends State<HistoryTab> {
     required String status,
     required String date,
     required IconData iconData,
+    required String address,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
@@ -217,7 +472,14 @@ class _HistoryTabState extends State<HistoryTab> {
                 ),
                 const SizedBox(height: 5),
                 Text("Status : $status", style: const TextStyle(fontSize: 13)),
-                Text("Date   : $date", style: const TextStyle(fontSize: 13)),
+                Text("Date : $date", style: const TextStyle(fontSize: 13)),
+                const SizedBox(height: 3),
+                Text(
+                  address,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),

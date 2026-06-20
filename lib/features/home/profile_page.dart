@@ -4,6 +4,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'edit_profile_page.dart';
 import 'language_page.dart';
 import '../auth/login/login_page.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -13,32 +18,84 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // Mengambil UID user yang sedang login saat ini
   final String _currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+  String lokasiTampil = 'Mengambil lokasi...';
+
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+  }
+
+  File? _imageFile;
+
+  Future<void> _pickAndUploadImage() async {
+    try {
+      final picker = ImagePicker();
+
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (pickedFile == null) return;
+
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+
+      final file = File(pickedFile.path);
+
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('profile_images')
+          .child('$uid.jpg');
+
+      await ref.putFile(file);
+
+      final imageUrl = await ref.getDownloadURL();
+
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'photoUrl': imageUrl,
+      });
+
+      print("UPLOAD SUCCESS: $imageUrl");
+
+      setState(() {});
+    } catch (e) {
+      print("UPLOAD ERROR: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     const darkGreenColor = Color(0xFF1E3A34);
     const lightGreenAccent = Color(0xFFD4E9D7);
 
+    // Antisipasi jika user ternyata belum login atau session habis
+    if (_currentUid.isEmpty) {
+      return const Scaffold(
+        body: Center(
+          child: Text("User tidak ditemukan, silakan login kembali."),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: StreamBuilder<DocumentSnapshot>(
-        // 1. Menghubungkan aliran data realtime langsung ke dokumen user di Firestore
         stream: FirebaseFirestore.instance
             .collection('users')
-            .doc('DPMTzVrH2Tb1mvPVWhw4ZfVVZRC2') // 🔥 GANTI DI SINI, JAB!
+            .doc(_currentUid)
             .snapshots(),
         builder: (context, snapshot) {
-          // ... sisa kode builder kamu di bawahnya ...
-          // Data default cadangan jika Firebase kosong atau masih loading
-          String nameFromFirebase = "Karel Septian";
-          String photoUrlFromFirebase = "";
+          String namaTampil = 'Memuat nama...';
+          String fotoTampil = '';
 
           if (snapshot.hasData && snapshot.data!.exists) {
             var userData = snapshot.data!.data() as Map<String, dynamic>;
-            nameFromFirebase = userData['name'] ?? "Karel Septian";
-            photoUrlFromFirebase = userData['photoUrl'] ?? "";
+
+            namaTampil = userData['name'] ?? 'Pengguna Bhuwana';
+            fotoTampil = userData['photoUrl'] ?? '';
           }
 
           return SingleChildScrollView(
@@ -46,7 +103,7 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 const SizedBox(height: 80),
 
-                /// PROFILE (OTOMATIS SINKRON)
+                /// PROFILE HEADER (SINKRON REAL-TIME)
                 Center(
                   child: Column(
                     children: [
@@ -67,11 +124,11 @@ class _ProfilePageState extends State<ProfilePage> {
                           CircleAvatar(
                             radius: 65,
                             backgroundColor: const Color(0xFFC4D6CD),
-                            // 2. Jika ada photoUrl dari Firebase, pasang gambarnya. Jika tidak, pakai icon person.
-                            backgroundImage: photoUrlFromFirebase.isNotEmpty
-                                ? NetworkImage(photoUrlFromFirebase)
+                            // Jika fotoTampil ada isinya, muat dari internet. Jika kosong, tampilkan icon orang.
+                            backgroundImage: fotoTampil.isNotEmpty
+                                ? NetworkImage(fotoTampil)
                                 : null,
-                            child: photoUrlFromFirebase.isEmpty
+                            child: fotoTampil.isEmpty
                                 ? const Icon(
                                     Icons.person,
                                     size: 80,
@@ -88,27 +145,37 @@ class _ProfilePageState extends State<ProfilePage> {
                                 color: Color(0xFF37655B),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
-                                Icons.camera_alt_outlined,
-                                size: 18,
-                                color: Colors.white,
+                              child: GestureDetector(
+                                onTap: _pickAndUploadImage,
+                                child: const Icon(
+                                  Icons.camera_alt_outlined,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 15),
-                      // 3. Nama sekarang mengambil variabel dari Firebase
+
+                      // Menampilkan nama asli real-time dari Firebase
                       Text(
-                        nameFromFirebase,
+                        namaTampil,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const Text(
-                        "Desa kertosono, Kecamatan kertoyani",
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                      const SizedBox(height: 4),
+
+                      // Menampilkan lokasi asli real-time dari Firebase
+                      Text(
+                        lokasiTampil,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -116,7 +183,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 const SizedBox(height: 35),
 
-                /// MENU
+                /// PANEL MENU UTAMA
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25),
                   child: Container(
@@ -126,7 +193,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     child: Column(
                       children: [
-                        /// 🔥 EDIT PROFILE
+                        /// 👤 EDIT PROFILE
                         ListTile(
                           leading: const Icon(Icons.person),
                           title: const Text("Edit Profile"),
@@ -140,7 +207,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           },
                         ),
 
-                        /// 🔥 LANGUAGE
+                        /// 🌐 LANGUAGE
                         ListTile(
                           leading: const Icon(Icons.public),
                           title: const Text("Language"),
@@ -160,7 +227,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 const SizedBox(height: 20),
 
-                /// 🔥 LOGOUT
+                /// 🚪 BUTTON LOGOUT
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25),
                   child: SizedBox(
@@ -168,7 +235,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     height: 48,
                     child: ElevatedButton(
                       onPressed: () async {
-                        // Tambahkan proses logout dari Firebase Auth sebelum pindah halaman
+                        // Proses keluar dari Firebase Auth
                         await FirebaseAuth.instance.signOut();
 
                         if (context.mounted) {
@@ -198,5 +265,56 @@ class _ProfilePageState extends State<ProfilePage> {
         },
       ),
     );
+  }
+
+  Future<void> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      setState(() {
+        lokasiTampil = 'GPS tidak aktif';
+      });
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied) {
+      setState(() {
+        lokasiTampil = 'Izin lokasi ditolak';
+      });
+      return;
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      setState(() {
+        lokasiTampil = 'Izin lokasi permanen ditolak';
+      });
+      return;
+    }
+
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    List<Placemark> placemarks = await placemarkFromCoordinates(
+      position.latitude,
+      position.longitude,
+    );
+
+    if (placemarks.isNotEmpty) {
+      Placemark place = placemarks.first;
+
+      setState(() {
+        lokasiTampil =
+            "${place.subAdministrativeArea ?? ''}, ${place.administrativeArea ?? ''}";
+      });
+    }
   }
 }
